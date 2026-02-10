@@ -1,4 +1,8 @@
 from enum import Enum
+from typing import List
+import numpy as np
+IMAGENET_MEAN_255: np.ndarray =  np.array([0.485, 0.456, 0.406])
+IMAGENET_STD_255: np.ndarray =   np.array([0.229, 0.224, 0.225])
 
 class DefaultConstant(Enum):
 
@@ -20,8 +24,20 @@ class DefaultConstant(Enum):
 
     DEFAULT_CONTENT_IMAGES_DIR: str = "./content_images"
     DEFAULT_STYLE_IMAGES_DIR: str = "./style_images"
-    DEFAULT_GENERATED_OUTPUT_DIR: str = "./output_images"
+    DEFAULT_GENERATED_OUTPUT_DIR: str = "./output_images"\
     
+    C_HEIGHT: str = "height"
+    C_OPTIMIZER: str = "optimizer"
+
+    
+    
+
+
+
+
+
+
+
 
 
 

@@ -1,6 +1,7 @@
 import torch
 from torch import Tensor
-from typing import List, Set
+from typing import List, Set, Tuple
+import constants as c
 
 def compute_content_loss(
         NN_feature_maps_list: List[Tensor],
@@ -30,8 +31,8 @@ def compute_style_loss(NN_feature_maps_list: List[Tensor],
     
 
 def compute_tv_loss(input_image: Tensor):
-    numerator: Tensor = torch.sum(torch.abs(input[:, :, :, :-1] - input[:, :, :, 1:]))
-    denumerator: Tensor = torch.sum(torch.abs(input[:, :, :-1, :] - input[:, :, 1:, :]))
+    numerator: Tensor = torch.sum(torch.abs(input_image[:, :, :, :-1] - input_image[:, :, :, 1:]))
+    denumerator: Tensor = torch.sum(torch.abs(input_image[:, :, :-1, :] - input_image[:, :, 1:, :]))
     return numerator / denumerator
 
 def compute_total_loss( content_loss: Tensor, style_loss: Tensor,
@@ -53,4 +54,27 @@ def gram_matrix(input_tensor: Tensor, normalize: bool = True):
     if normalize:
         gram_mat /= c * h * w # divide by the number total of elements in the feature map
     return gram_mat
+
+def calculate_loss(model, generated_img, original_representations,
+                 content_feature_index, style_feature_indices) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    original_content_representation: Tensor = original_representations[0]
+    original_style_representation: Tensor = original_representations[1]
+
+    set_of_feature_maps = model(generated_img)
+
+    content_loss: Tensor = compute_content_loss(set_of_feature_maps, content_feature_index,
+                                                original_content_representation)
+
+    style_loss: Tensor = compute_style_loss(set_of_feature_maps, style_feature_indices,
+                                            original_style_representation)
+    
+    tv_loss: Tensor = compute_tv_loss(generated_img)
+
+    total_loss: Tensor = compute_total_loss(content_loss,style_loss, tv_loss,
+                       c.DefaultConstant.DEFAULT_TOTAL_VARIATION_WEIGHT.value,
+                       c.DefaultConstant.DEFAULT_CONTENT_WEIGHT.value,
+                       c.DefaultConstant.DEFAULT_STYLE_WEIGHT.value)
+    
+    return total_loss, content_loss, style_loss, tv_loss
+
 
