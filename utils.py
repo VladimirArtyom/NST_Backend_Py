@@ -66,7 +66,7 @@ def preprocess_image(img_path: str, target_shape, device: str) :
     image = transform(image).to(device).unsqueeze(0) # add batch 
     return image
 
-def save_image_(image: Tensor, ):
+def save_image_(image: Tensor, file_name: str):
     transform = transforms.Compose([
         transforms.Lambda(lambda pixel: pixel.div(255.)),
         transforms.Normalize((-1*c.IMAGENET_MEAN_255/c.IMAGENET_STD_255),
@@ -74,7 +74,7 @@ def save_image_(image: Tensor, ):
     ])
 
     image = transform(image)
-    save_image(image)
+    save_image(image, file_name)
 def show_tensor_image(image: Tensor, filename: str = None):
     transform = transforms.Compose([
         transforms.Lambda(lambda pixel: pixel.div(255.)),

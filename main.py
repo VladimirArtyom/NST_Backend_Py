@@ -79,9 +79,29 @@ def nst(content_filename: str, style_filename: str, init_method: str, height: in
                 print(f"Adam | ieration: {iteration:03}, total_loss: {total_loss.item():12.4f}, content_loss: {content_loss.item():12.4f}, style_loss: {style_loss.item():12.4f}, tv_loss: {tv_loss.item():12.4f}")
                 if iteration % 50 == 0 :
                     file_name: str =os.path.join(output_images_path, str(iteration)+".jpg")
-                    u.save_image(generated_image, file_name)
+                    u.save_image_(generated_image, file_name)
     elif optimizer == c.DefaultConstant.O_LBFGS.value:
-        ...
+        optimizer = LBFGS((generated_image,), max_iter=num_of_iterations[c.DefaultConstant.O_LBFGS.value], line_search_fn='strong_wolfe')
+        iteration = 0
+
+        def closure():
+            nonlocal iteration
+            if torch.is_grad_enabled():
+                optimizer.zero_grad()
+            total_loss, content_loss, style_loss, tv_loss = l.calculate_loss(nn_model, generated_img=generated_image,
+                                                                         original_representations=original_representations, content_feature_index=content_indx_et_l_name[0],
+                                                                         style_feature_indices=style_indices_et_l_name[0])
+            total_loss.backward()
+            with torch.no_grad():
+                print(f"Adam | ieration: {iteration:03}, total_loss: {total_loss.item():12.4f}, content_loss: {content_loss.item():12.4f}, style_loss: {style_loss.item():12.4f}, tv_loss: {tv_loss.item():12.4f}")
+                if iteration % 50 == 0 :
+                    file_name: str =os.path.join(output_images_path, str(iteration)+".jpg")
+                    u.save_image_(generated_image, file_name)
+            iteration += 1
+            return total_loss
+
+        optimizer.step(closure)
+    
     
 if __name__ == "__main__":
     parser: argparse.ArgumentParser = argparse.ArgumentParser()
@@ -106,10 +126,8 @@ if __name__ == "__main__":
                                                            default=c.DefaultConstant.CANVAS_INIT_METHOD_RANDOM.value)
     parser.add_argument("--device", type=str, default="cpu")
     args: Dict = parser.parse_args()
-    nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_RANDOM.value, 400, optimizer=c.DefaultConstant.O_ADAM.value) 
+    #nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value) 
     #print(c.DefaultConstant.IMAGENET_MEAN_255.value)
 
-    #img = (u.preprocess_image("kk.jpg",400 , device=args.device))
-    #img = u.show_tensor_image(img)
-    #plt.imshow(img)
-    #plt.show()
+    img = (u.preprocess_image("./content_images/kk.jpg",400 , device=args.device))
+    u.save_image_(img.squeeze(0),"why.jpg")
