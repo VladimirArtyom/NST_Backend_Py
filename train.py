@@ -20,7 +20,7 @@ class TrainingConfiguration:
     LEARNING_RATE: float = c.DefaultConstant.DEFAULT_TRAINING_LR.value
     DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
     SAVE_FILEDIR: str = "saved_model"
-    SAVE_FILENAME: str = "batik_vgg19_features.pth"
+    SAVE_FILENAME: str = "batik_vgg19_features"
 
     def setBatch(this, newBatch: int):
         this.BATCH_SIZE = newBatch
@@ -36,7 +36,7 @@ class TrainingConfiguration:
 def get_transform_dataset()-> transforms.Compose:
     
     transform = transforms.Compose([
-        transforms.Resize(c.DefaultConstant.DEFAULT_SIZE_IMAGE_1.value),
+        transforms.Resize((c.DefaultConstant.DEFAULT_SIZE_IMAGE_1.value, c.DefaultConstant.DEFAULT_SIZE_IMAGE_1.value)),
         transforms.ToTensor(),
         transforms.Normalize(mean=c.IMAGENET_MEAN_255, 
                              std=c.IMAGENET_STD_255)
@@ -49,21 +49,20 @@ def get_dataloaders(config: TrainingConfiguration) -> Tuple[Tensor, Tensor, List
     test_dir: str = os.path.join(config.DATA_DIR,"test")
 
     if os.path.exists(test_dir):
+        print("Test dataset is found")
         test_dataset = datasets.ImageFolder(test_dir, transform=get_transform_dataset() )
     
     if os.path.exists(train_dir):
+        print("Train dataset is found")
         train_dataset = datasets.ImageFolder(train_dir, transform=get_transform_dataset())
 
     train_loader = DataLoader(train_dataset,
                               batch_size=c.DefaultConstant.DEFAULT_BATCH_SIZE.value,
-                              num_workers=c.DefaultConstant.DEFAULT_WORKERS.value,
                               shuffle=True,
                               pin_memory=True)
     test_loader = DataLoader(test_dataset,
                              batch_size=c.DefaultConstant.DEFAULT_BATCH_SIZE.value,
-                             num_workers=c.DefaultConstant.DEFAULT_WORKERS.value,
-                             shuffle=True,
-                             pin_memory=True
+                             shuffle=False,
                              )
     
     class_names: List[str] = train_dataset.classes
@@ -113,6 +112,10 @@ def train_model(model, train_loader:DataLoader,
                       c.DefaultConstant.M_TEST_F1.value: [],
                       c.DefaultConstant.M_TRAIN_MCC.value: [],
                       c.DefaultConstant.M_TEST_MCC.value: [],
+                      c.DefaultConstant.M_TRAIN_PREC.value: [],
+                      c.DefaultConstant.M_TEST_PREC.value: [],
+                      c.DefaultConstant.M_TRAIN_SUPPORT.value: [],
+                      c.DefaultConstant.M_TEST_SUPPORT.value: []
                     }
 
 
@@ -131,7 +134,7 @@ def train_model(model, train_loader:DataLoader,
 
         all_train_labels: List = []
         all_test_labels: List = []
-
+        xsa = 0
         for b_inputs, b_labels in train_loader:
             b_inputs, b_labels = b_inputs.to(config.DEVICE), b_labels.to(config.DEVICE)
             optimizer.zero_grad()
@@ -143,28 +146,34 @@ def train_model(model, train_loader:DataLoader,
             _, tr_preds = torch.max(outputs, dim=1) 
             #print(outputs)
             #print(outputs.size())
-            all_train_labels.append(b_labels.cpu().numpy())
-            all_train_preds.append(tr_preds.cpu().numpy())
+            all_train_labels.extend(b_labels.cpu().numpy())
+            all_train_preds.extend(tr_preds.cpu().numpy())
 
             batch_loss += loss.item() * b_inputs.size(0)
             #print(all_train_preds)
             #print("="*100)
             #print(all_train_labels)
             #print(batch_loss)
+            xsa+=1
+            if xsa == 2:
+                break
         
         e_loss_train = batch_loss / len(train_loader.dataset)
+        print(all_train_labels)
+        print(all_train_preds)
+        
         e_acc_train = accuracy_score(all_train_labels, all_train_preds)
         e_prec_train, e_recall_train, e_f1_train, e_support_train =  precision_recall_fscore_support(all_train_labels, all_train_preds,
                                                                                                       average="micro", zero_division="warn")
-
-        history[c.DefaultConstant.M_TRAIN_LOSS].append(e_loss_train)
-        history[c.DefaultConstant.M_TRAIN_F1].append(e_f1_train)
-        history[c.DefaultConstant.M_TRAIN_RECALL].append(e_recall_train)
-        history[c.DefaultConstant.M_TRAIN_ACCURACY].append(e_acc_train)
-        history[c.DefaultConstant.M_TRAIN_PREC].append(e_prec_train)
-        history[c.DefaultConstant.M_TRAIN_SUPPORT].append(e_support_train)
+        history[c.DefaultConstant.M_TRAIN_LOSS.value].append(e_loss_train)
+        history[c.DefaultConstant.M_TRAIN_F1.value].append(e_f1_train)
+        history[c.DefaultConstant.M_TRAIN_RECALL.value].append(e_recall_train)
+        history[c.DefaultConstant.M_TRAIN_ACCURACY.value].append(e_acc_train)
+        history[c.DefaultConstant.M_TRAIN_PREC.value].append(e_prec_train)
+        history[c.DefaultConstant.M_TRAIN_SUPPORT.value].append(e_support_train)
         
         # ======== test =+++=+++++=+++=
+        tsa= 0
         model.eval()
         test_batch_loss: float = 0.0
         for b_inputs, b_labels in test_loader:
@@ -174,28 +183,30 @@ def train_model(model, train_loader:DataLoader,
             
             test_batch_loss += loss.item() * b_inputs.size(0)
             _, test_preds = torch.max(outputs, dim=1)
-            all_test_preds.append(test_preds.cpu().numpy())
-            all_test_labels.append(b_labels.cpu().numpy())
-        
+            all_test_preds.extend(test_preds.cpu().numpy())
+            all_test_labels.extend(b_labels.cpu().numpy())
+            tsa+=1
+            if tsa == 2:
+                break
         e_loss_test = test_batch_loss / len(test_loader.dataset)
 
         e_acc_test = accuracy_score(all_test_labels, all_test_preds)
         e_prec_test, e_recall_test, e_f1_test, e_support_test =  precision_recall_fscore_support(all_test_labels, all_test_preds,
                                                                                             average="micro", zero_division="warn")
         
-        history[c.DefaultConstant.M_TEST_LOSS].append(e_loss_test)
-        history[c.DefaultConstant.M_TEST_F1].append(e_f1_test)
-        history[c.DefaultConstant.M_TEST_RECALL].append(e_recall_test)
-        history[c.DefaultConstant.M_TEST_ACCURACY].append(e_acc_test)
-        history[c.DefaultConstant.M_TEST_PREC].append(e_prec_test)
-        history[c.DefaultConstant.M_TEST_SUPPORT].append(e_support_test)
+        history[c.DefaultConstant.M_TEST_LOSS.value].append(e_loss_test)
+        history[c.DefaultConstant.M_TEST_F1.value].append(e_f1_test)
+        history[c.DefaultConstant.M_TEST_RECALL.value].append(e_recall_test)
+        history[c.DefaultConstant.M_TEST_ACCURACY.value].append(e_acc_test)
+        history[c.DefaultConstant.M_TEST_PREC.value].append(e_prec_test)
+        history[c.DefaultConstant.M_TEST_SUPPORT.value].append(e_support_test)
 
         scheduler.step(e_loss_test)
 
         if e_f1_test > e_best_f1:
             print(f"Saving new loss, previously {e_best_f1} -> now {e_f1_test}")           
             e_best_f1 = e_f1_test
-            torch.save(model.state_dict(), os.path.join(config.SAVE_FILEDIR, config.SAVE_FILENAME, epoch))
+            torch.save(model.state_dict(), os.path.join(config.SAVE_FILEDIR, config.SAVE_FILENAME +"_"+str(epoch) + ".pth"))
         
         print("\n\n")
         print(f"  Epoch {epoch+1}/{config.NUM_EPOCHS}")
@@ -209,12 +220,4 @@ def train_model(model, train_loader:DataLoader,
     print("\n" + "="*80)
     print(f"Training complete! Best validation F1: {e_best_f1:.3f}")
 
-
     return model, history
-
-
-
-
-
-        
-

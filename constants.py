@@ -13,7 +13,6 @@ class DefaultConstant(Enum):
     DEFAULT_BATCH_SIZE: int = 32
     DEFAULT_NUM_EPOCHS: int = 20
     DEFAULT_TRAINING_LR: float = 1e-4
-    DEFAULT_WORKERS: int= 4
 
     VGG_19: str = "vgg19"
     VGG_16: str = "vgg16"

@@ -53,7 +53,7 @@ def nst(content_filename: str, style_filename: str, init_method: str, height: in
 
     generated_image = Variable(initialize_image, requires_grad=True)
     
-    nn_model, content_indx_et_l_name, style_indices_et_l_name = u.prepare_model(c.DefaultConstant.VGG_16.value, device)
+    nn_model, content_indx_et_l_name, style_indices_et_l_name = u.prepare_model(c.DefaultConstant.VGG_19.value, device)
 
     set_of_content_feature_maps = nn_model(content_image)
     set_of_style_feature_maps = nn_model(style_image)

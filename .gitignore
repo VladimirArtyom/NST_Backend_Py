@@ -4,3 +4,4 @@ output_images/
 *.zip
 Datasets/
 papers/
+*.pth

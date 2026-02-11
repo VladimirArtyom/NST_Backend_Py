@@ -12,7 +12,7 @@ import constants as c
 from models.definitions.vgg_nets import Vgg16, Vgg19, Vgg16Experimental
 
 
-def prepare_model(model, device: str, experimental: bool = False):
+def prepare_model(model, device: str, experimental: bool = False, weight_path: str = None):
     if model == c.DefaultConstant.VGG_16.value:
         if experimental:
             model = Vgg16Experimental(requires_grad=False, show_progress=True)
@@ -20,7 +20,10 @@ def prepare_model(model, device: str, experimental: bool = False):
             model = Vgg16(requires_grad=False, show_progress=True)
 
     elif model == c.DefaultConstant.VGG_19.value:
-        model = Vgg19(requires_grad=False, show_progress=True)
+        if weight_path:
+            model = Vgg19(requires_grad=False, show_progress=True, weight_path=weight_path)
+        else:
+            model = Vgg19(requires_grad=False, show_progress=True)
     else:
         raise ValueError(f'{model} is not supported yet')
 

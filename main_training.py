@@ -1,5 +1,6 @@
 import train as t
 import utils as u
+from models.definitions import vgg_nets
 if __name__ == "__main__":
     t_config = t.TrainingConfiguration()
     
