@@ -1,6 +1,7 @@
 from collections import namedtuple
 import torch
 from torchvision import models
+from torchvision.models import VGG19_Weights
 
 """
     More detail about the VGG architecture (if you want to understand magic/hardcoded numbers) can be found here:
@@ -156,7 +157,6 @@ class Vgg16Experimental(torch.nn.Module):
 
         return out
 
-
 class Vgg19(torch.nn.Module):
     """
     Used in the original NST paper, only those layers are exposed which were used in the original paper
@@ -164,9 +164,23 @@ class Vgg19(torch.nn.Module):
     'conv1_1', 'conv2_1', 'conv3_1', 'conv4_1', 'conv5_1' were used for style representation
     'conv4_2' was used for content representation (although they did some experiments with conv2_2 and conv5_2)
     """
-    def __init__(self, requires_grad=False, show_progress=False, use_relu=True):
+    def __init__(self, requires_grad=False, show_progress=False, use_relu=True, weight_path=None):
         super().__init__()
-        vgg_pretrained_features = models.vgg19(pretrained=True, progress=show_progress).features
+        if weight_path is None:
+            vgg = models.vgg19(weights=VGG19_Weights.IMAGENET1K_V1, progress=show_progress).features
+        else:
+            vgg = models.vgg19(weights=None)
+            state_dict = torch.load(weight_path, map_location="cpu")
+            if 'features' in list(state_dict.keys())[0]:
+                features_dict = {k.replace("features", ""): k for k, v in state_dict.items() if 'features' in k}
+
+                vgg.features.load_state_dict(features_dict)
+            else:
+                vgg.features.load_state_dict(state_dict)
+        if weight_path is not None:
+            vgg_pretrained_features = vgg.features
+        else:
+            vgg_pretrained_features = vgg
         if use_relu:  # use relu or as in original paper conv layers
             self.layer_names = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'conv4_2', 'relu5_1']
             self.offset = 1
@@ -194,7 +208,7 @@ class Vgg19(torch.nn.Module):
             self.slice4.add_module(str(x), vgg_pretrained_features[x])
         for x in range(20+self.offset, 22):
             self.slice5.add_module(str(x), vgg_pretrained_features[x])
-        for x in range(22, 29++self.offset):
+        for x in range(22, 29+self.offset):
             self.slice6.add_module(str(x), vgg_pretrained_features[x])
         if not requires_grad:
             for param in self.parameters():

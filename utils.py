@@ -4,6 +4,8 @@ import cv2
 from torchvision import transforms
 from torch import Tensor
 from torchvision.utils import save_image
+from typing import Dict
+import matplotlib.pyplot as plt
 
 import constants as c
 
@@ -87,3 +89,34 @@ def show_tensor_image(image: Tensor, filename: str = None):
         save_image(image, filename)
 
     return image.permute(1, 2, 0).detach().numpy()
+
+
+def plot_training_history(history: Dict):
+    plt.figure(figsize=(12, 4))
+    
+    # Loss curves
+    plt.subplot(1, 2, 1)
+    plt.plot(history[c.DefaultConstant.M_TRAIN_LOSS.value], label='Train Loss')
+    plt.plot(history[c.DefaultConstant.M_TEST_LOSS.value], label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training & Test Loss')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    # Accuracy curve
+    plt.subplot(1, 2, 2)
+    plt.plot(history[c.DefaultConstant.M_TRAIN_F1.value],
+              label='Train F1', color='green')
+    plt.plot(history[c.DefaultConstant.M_TEST_F1.value],
+              label='Test F1', color='green')
+    plt.xlabel('Epoch')
+    plt.xlabel('Epoch')
+    plt.ylabel('F1')
+    plt.title('F1 training & test')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('figures/training_history.png', dpi=150)
+    plt.show()

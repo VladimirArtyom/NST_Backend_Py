@@ -126,8 +126,11 @@ if __name__ == "__main__":
                                                            default=c.DefaultConstant.CANVAS_INIT_METHOD_RANDOM.value)
     parser.add_argument("--device", type=str, default="cpu")
     args: Dict = parser.parse_args()
-    #nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value) 
+    
+    nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value) 
     #print(c.DefaultConstant.IMAGENET_MEAN_255.value)
+    #mod = u.prepare_model(c.DefaultConstant.VGG_19.value, device=args.device)
+    #print(mod)
+    #img = (u.preprocess_image("./content_images/kk.jpg",400 , device=args.device))
+    #u.save_image_(img.squeeze(0),"why.jpg")
 
-    img = (u.preprocess_image("./content_images/kk.jpg",400 , device=args.device))
-    u.save_image_(img.squeeze(0),"why.jpg")

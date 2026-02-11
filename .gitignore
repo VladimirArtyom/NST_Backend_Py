@@ -1,2 +1,7 @@
 output_images/
 *yml
+*.pyc
+*.zip
+Datasets/
+papers/
+saved_model/
