@@ -4,4 +4,3 @@ output_images/
 *.zip
 Datasets/
 papers/
-saved_model/

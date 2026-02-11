@@ -74,7 +74,7 @@ def get_dataloaders(config: TrainingConfiguration) -> Tuple[Tensor, Tensor, List
     
     return train_loader, test_loader, class_names
 
-def create_model_for_training(num_classes: List[str], freeze_layers=True) :
+def create_model_for_training(num_classes: List[str], freeze_layers=False) :
     model = models.vgg19(weights=VGG19_Weights.IMAGENET1K_V1)
 
     if freeze_layers:
