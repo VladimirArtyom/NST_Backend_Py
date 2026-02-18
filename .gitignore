@@ -5,3 +5,5 @@ output_images/
 Datasets/
 papers/
 *.pth
+*.pdf
+*.pyc

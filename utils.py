@@ -13,17 +13,25 @@ from models.definitions.vgg_nets import Vgg16, Vgg19, Vgg16Experimental
 
 
 def prepare_model(model, device: str, experimental: bool = False, weight_path: str = None):
+    print(model)
     if model == c.DefaultConstant.VGG_16.value:
         if experimental:
+            print("Using experimental VGG16")
             model = Vgg16Experimental(requires_grad=False, show_progress=True)
-        else:
+        elif model:
+            print("Using default VGG16")
             model = Vgg16(requires_grad=False, show_progress=True)
 
     elif model == c.DefaultConstant.VGG_19.value:
         if weight_path:
-            model = Vgg19(requires_grad=False, show_progress=True, weight_path=weight_path)
+            print("Using trained VGG19")
+            model = Vgg19(requires_grad=False, 
+                          show_progress=True, 
+                          weight_path=weight_path)
         else:
-            model = Vgg19(requires_grad=False, show_progress=True)
+            print("Using default VGG19")
+            model = Vgg19(requires_grad=False, 
+                          show_progress=True)
     else:
         raise ValueError(f'{model} is not supported yet')
 

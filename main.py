@@ -30,7 +30,7 @@ def process_image(model, optimizer: Optimizer, original_representations,
 
     return step
 
-def nst(content_filename: str, style_filename: str, init_method: str, height: int, optimizer: str = c.DefaultConstant.O_LBFGS.value):
+def nst(content_filename: str, style_filename: str, init_method: str, height: int, optimizer: str = c.DefaultConstant.O_LBFGS.value, model_type: str = c.DefaultConstant.VGG_19.value, weight_path: str = None):
     device: str = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     content_image_path: str = os.path.join(c.DefaultConstant.DEFAULT_CONTENT_IMAGES_DIR.value, content_filename) 
@@ -53,7 +53,7 @@ def nst(content_filename: str, style_filename: str, init_method: str, height: in
 
     generated_image = Variable(initialize_image, requires_grad=True)
     
-    nn_model, content_indx_et_l_name, style_indices_et_l_name = u.prepare_model(c.DefaultConstant.VGG_19.value, device)
+    nn_model, content_indx_et_l_name, style_indices_et_l_name = u.prepare_model(model_type, device, weight_path=weight_path)
 
     set_of_content_feature_maps = nn_model(content_image)
     set_of_style_feature_maps = nn_model(style_image)
@@ -127,7 +127,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cpu")
     args: Dict = parser.parse_args()
     
-    nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value) 
+    saved_model_path: str = "./saved_model/batik_vgg19_features.pth"
+    nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value, weight_path=saved_model_path) 
     #print(c.DefaultConstant.IMAGENET_MEAN_255.value)
     #mod = u.prepare_model(c.DefaultConstant.VGG_19.value, device=args.device)
     #print(mod)

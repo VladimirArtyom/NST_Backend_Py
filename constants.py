@@ -16,7 +16,7 @@ class DefaultConstant(Enum):
 
     VGG_19: str = "vgg19"
     VGG_16: str = "vgg16"
-
+    VGG_16_EXPERIMENTAL: str ="vgg_16_experimental"
     O_LBFGS: str = "lbfgs"
     O_ADAM: str = "adam"
 

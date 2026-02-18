@@ -175,7 +175,6 @@ class Vgg19(torch.nn.Module):
             if 'features' in list(state_dict.keys())[0]:
                 state_dict_cleaned = {k.replace("features.",""):v for k,v in state_dict.items() if "features" in k}
 
-            print("STATEDICT", state_dict_cleaned.keys())
             vgg.features.load_state_dict(state_dict_cleaned)
         if weight_path is not None:
             vgg_pretrained_features = vgg.features
