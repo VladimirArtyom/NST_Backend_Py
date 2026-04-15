@@ -1,9 +1,9 @@
 import argparse
 import constants as c
 import torch
+from typing import List, Dict, Tuple
 
 import numpy as np
-from typing import Dict
 from torch import Tensor
 from torch.autograd import Variable
 from torch.optim.optimizer import Optimizer
@@ -30,14 +30,21 @@ def process_image(model, optimizer: Optimizer, original_representations,
 
     return step
 
-def nst(content_filename: str, style_filename: str, init_method: str, height: int, optimizer: str = c.DefaultConstant.O_LBFGS.value, model_type: str = c.DefaultConstant.VGG_19.value, weight_path: str = None):
+def create_folder(path_name: str) -> None:
+    if os.path.isdir(path_name) == False:
+        os.mkdir(path=path_name)
+        print("Folder created ...")
+
+def nst(content_filename: str,
+         style_filename: str, output_path:str, init_method: str, height: int,
+         optimizer: str = c.DefaultConstant.O_LBFGS.value, model_type: str = c.DefaultConstant.VGG_19.value,
+         weight_path: str = None, ):
     device: str = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    content_image_path: str = os.path.join(c.DefaultConstant.DEFAULT_CONTENT_IMAGES_DIR.value, content_filename) 
-    style_image_path: str = os.path.join(c.DefaultConstant.DEFAULT_STYLE_IMAGES_DIR.value, style_filename)
+    content_image_path: str = content_filename
+    style_image_path: str = style_filename
 
-    output_images_path: str = c.DefaultConstant.DEFAULT_GENERATED_OUTPUT_DIR.value
-    
+    create_folder(output_path)
     content_image: np.ndaraay = u.preprocess_image(content_image_path, height, device)
     style_image: np.ndarray = u.preprocess_image(style_image_path, height, device)
 
@@ -78,7 +85,7 @@ def nst(content_filename: str, style_filename: str, init_method: str, height: in
             with torch.no_grad():
                 print(f"Adam | ieration: {iteration:03}, total_loss: {total_loss.item():12.4f}, content_loss: {content_loss.item():12.4f}, style_loss: {style_loss.item():12.4f}, tv_loss: {tv_loss.item():12.4f}")
                 if iteration % 50 == 0 :
-                    file_name: str =os.path.join(output_images_path, str(iteration)+".jpg")
+                    file_name: str =os.path.join(output_path, str(iteration)+".jpg")
                     u.save_image_(generated_image, file_name)
     elif optimizer == c.DefaultConstant.O_LBFGS.value:
         optimizer = LBFGS((generated_image,), max_iter=num_of_iterations[c.DefaultConstant.O_LBFGS.value], line_search_fn='strong_wolfe')
@@ -95,13 +102,24 @@ def nst(content_filename: str, style_filename: str, init_method: str, height: in
             with torch.no_grad():
                 print(f"Adam | ieration: {iteration:03}, total_loss: {total_loss.item():12.4f}, content_loss: {content_loss.item():12.4f}, style_loss: {style_loss.item():12.4f}, tv_loss: {tv_loss.item():12.4f}")
                 if iteration % 50 == 0 :
-                    file_name: str =os.path.join(output_images_path, str(iteration)+".jpg")
+                    file_name: str =os.path.join(output_path, str(iteration)+".jpg")
                     u.save_image_(generated_image, file_name)
             iteration += 1
             return total_loss
 
         optimizer.step(closure)
     
+def loopTowardsTheName(name: str, target_style: List[str]):
+    joinContent: List[Tuple[str, str]] = []
+    for root, dirs, files in os.walk(name):
+        for ff in (dirs):
+            for _, _, files in os.walk(os.path.join(root,ff)):
+                for f in files:
+                    for style_path in target_style:
+                        joinContent.append( (os.path.join(root, ff, f), style_path, os.path.join(root,ff,f+"_OUTS")))
+
+    return joinContent
+
     
 if __name__ == "__main__":
     parser: argparse.ArgumentParser = argparse.ArgumentParser()
@@ -128,7 +146,14 @@ if __name__ == "__main__":
     args: Dict = parser.parse_args()
     
     saved_model_path: str = "./saved_model/batik_vgg19_features.pth"
-    nst("kk.jpg","memes.jpg",c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value, weight_path=saved_model_path) 
+    style_image_path: List[str] = [
+        os.path.join("Pictures", "Styles", "megamendung.png"),
+        os.path.join("Pictures", "Styles", "parang.png"),
+        os.path.join("Pictures", "Styles", "kawung.png")
+    ]
+    list_of_items = loopTowardsTheName("./Pictures", style_image_path)
+    for item in list_of_items:
+        nst(item[0], item[1], item[2], c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value, weight_path=saved_model_path) 
     #print(c.DefaultConstant.IMAGENET_MEAN_255.value)
     #mod = u.prepare_model(c.DefaultConstant.VGG_19.value, device=args.device)
     #print(mod)
