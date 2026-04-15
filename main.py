@@ -116,7 +116,7 @@ def loopTowardsTheName(name: str, target_style: List[str]):
             for _, _, files in os.walk(os.path.join(root,ff)):
                 for f in files:
                     for style_path in target_style:
-                        joinContent.append( (os.path.join(root, ff, f), style_path, os.path.join(root,ff,f+"_OUTS")))
+                        joinContent.append( (os.path.join(root, ff, f), style_path, os.path.join(root,ff,f+style_path+"_OUTS")))
 
     return joinContent
 
