@@ -72,7 +72,7 @@ def nst(content_filename: str,
     
     num_of_iterations: Dict = {
         c.DefaultConstant.O_LBFGS.value: 1000,
-        c.DefaultConstant.O_ADAM.value: 3000
+        c.DefaultConstant.O_ADAM.value: 3050
     }
 
     if optimizer == c.DefaultConstant.O_ADAM.value:
@@ -108,19 +108,20 @@ def nst(content_filename: str,
             return total_loss
 
         optimizer.step(closure)
-    
+
+
 def loopTowardsTheName(name: str, target_style: List[str]):
     joinContent: List[Tuple[str, str]] = []
     for root, dirs, files in os.walk(name):
         for ff in (dirs):
-            for _, _, files in os.walk(os.path.join(root,ff)):
-                for f in files:
-                    for style_path in target_style:
-                        joinContent.append( (os.path.join(root, ff, f), style_path, os.path.join(root,ff,f+style_path+"_OUTS")))
+            if "Style" not in ff:
+                for _, _, files in os.walk(os.path.join(root,ff)):
+                    for f in files:
+                        for style_path,style_name in target_style:
+                            joinContent.append( (os.path.join(root, ff, f),
+                                                  style_path, os.path.join( c.DefaultConstant.DEFAULT_GENERATED_OUTPUT_DIR.value, style_name +  ff +"-" + f + "-")))
 
     return joinContent
-
-    
 if __name__ == "__main__":
     parser: argparse.ArgumentParser = argparse.ArgumentParser()
 
@@ -147,11 +148,12 @@ if __name__ == "__main__":
     
     saved_model_path: str = "./saved_model/batik_vgg19_features.pth"
     style_image_path: List[str] = [
-        os.path.join("Pictures", "Styles", "megamendung.png"),
-        os.path.join("Pictures", "Styles", "parang.png"),
-        os.path.join("Pictures", "Styles", "kawung.png")
+        (os.path.join("Pictures", "Styles", "megamendung.png"), "megamendung"),
+        (os.path.join("Pictures", "Styles", "parang.png"), "parang"),
+        (os.path.join("Pictures", "Styles", "kawung.png"), "kawung")
     ]
     list_of_items = loopTowardsTheName("./Pictures", style_image_path)
+    print(list_of_items)
     for item in list_of_items:
         nst(item[0], item[1], item[2], c.DefaultConstant.CANVAS_INIT_METHOD_CONTENT.value, 400, optimizer=c.DefaultConstant.O_ADAM.value, weight_path=saved_model_path) 
     #print(c.DefaultConstant.IMAGENET_MEAN_255.value)
@@ -159,4 +161,3 @@ if __name__ == "__main__":
     #print(mod)
     #img = (u.preprocess_image("./content_images/kk.jpg",400 , device=args.device))
     #u.save_image_(img.squeeze(0),"why.jpg")
-
